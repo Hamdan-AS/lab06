@@ -1,0 +1,85 @@
+# CS 323 Artificial Intelligence
+# Lab session 06 - Iterative Deepening Search (IDS)
+# Name: ____________________
+# Registration no: ____________________
+
+from __future__ import annotations
+
+from typing import Dict, List, Optional, Tuple
+
+Lab6Graph = Dict[str, List[Tuple[str, int]]]
+
+# Directed weighted graph from Lab 06, Exercise 1.
+LAB6_GRAPH: Lab6Graph = {
+    "S": [("A", 3), ("D", 2)],
+    "A": [("B", 5), ("C", 10)],
+    "D": [("B", 1), ("E", 4)],
+    "B": [("C", 2), ("E", 1)],
+    "C": [("G", 4)],
+    "E": [("G", 3)],
+    "G": [],
+}
+
+
+def lab6_calculate_path_cost(graph: Lab6Graph, path: List[str]) -> int:
+    total = 0
+    for source, destination in zip(path, path[1:]):
+        edge_costs = {neighbor: cost for neighbor, cost in graph[source]}
+        if destination not in edge_costs:
+            raise ValueError(f"No edge exists from {source} to {destination}")
+        total += edge_costs[destination]
+    return total
+
+
+def lab6_depth_limited_search(
+    graph: Lab6Graph, start: str, goal: str, depth_limit: int
+) -> Tuple[Optional[List[str]], List[str]]:
+    explored: List[str] = []
+
+    def visit(node: str, remaining: int, path: List[str]) -> Optional[List[str]]:
+        explored.append(node)
+        if node == goal:
+            return path
+        if remaining == 0:
+            return None
+
+        for neighbor, _ in graph[node]:
+            if neighbor not in path:
+                result = visit(neighbor, remaining - 1, path + [neighbor])
+                if result is not None:
+                    return result
+        return None
+
+    return visit(start, depth_limit, [start]), explored
+
+
+def lab6_iterative_deepening_search(
+    graph: Lab6Graph, start: str, goal: str, max_depth: int
+) -> Tuple[List[str], List[Tuple[int, List[str]]]]:
+    iterations: List[Tuple[int, List[str]]] = []
+
+    for depth_limit in range(max_depth + 1):
+        path, explored = lab6_depth_limited_search(graph, start, goal, depth_limit)
+        iterations.append((depth_limit, explored))
+        if path is not None:
+            return path, iterations
+
+    return [], iterations
+
+
+def lab6_format_path(path: List[str]) -> str:
+    return " -> ".join(path) if path else "No path found"
+
+
+def run_ids_search():
+    ids_path, ids_iterations = lab6_iterative_deepening_search(LAB6_GRAPH, "S", "G", 10)
+
+    print("\nLAB 06 - ITERATIVE DEEPENING SEARCH (IDS)")
+    for depth_limit, explored in ids_iterations:
+        print(f"Depth {depth_limit}: {' -> '.join(explored)}")
+    print("Path:", lab6_format_path(ids_path))
+    print("Path cost:", lab6_calculate_path_cost(LAB6_GRAPH, ids_path))
+
+
+if __name__ == "__main__":
+    run_ids_search()
